@@ -170,6 +170,19 @@
   #today-question.fade-in {
     animation: fadeInUp 0.5s ease;
   }
+  .debug-bar {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    border-top: 1px dashed #ccc;
+    padding-top: 8px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #aaa;
+  }
+  .debug-bar span { cursor: pointer; }
+  .debug-bar span:hover { color: #666; }
 </style>
 </head>
 <body>
@@ -263,6 +276,11 @@
     <div class="btn outline" onclick="goHome()">처음으로</div>
   </div>
 
+  <div class="debug-bar">
+    <span onclick="simulateNextDay()">⏭ 다음날로 이동 (데모)</span>
+    <span onclick="resetDemo()">⟲ 데모 초기화</span>
+  </div>
+
 </div>
 
 <script>
@@ -300,9 +318,16 @@
     '오늘의 나에게 한마디 한다면?'
   ];
 
+  function getNow() {
+    const offset = parseInt(localStorage.getItem('debugDayOffset') || '0', 10);
+    const d = new Date();
+    d.setDate(d.getDate() + offset);
+    return d;
+  }
+
   function todayQuestion() {
     const start = new Date(2024, 0, 1);
-    const diffDays = Math.floor((new Date() - start) / 86400000);
+    const diffDays = Math.floor((getNow() - start) / 86400000);
     return QUESTIONS[diffDays % QUESTIONS.length];
   }
 
@@ -322,7 +347,7 @@
     const answer = document.getElementById('answer-input').innerText.trim();
     document.querySelector('#preview-card-4 .a').innerText = answer;
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      date: new Date().toDateString(),
+      date: getNow().toDateString(),
       answer: answer,
       background: currentBackground
     }));
@@ -336,7 +361,7 @@
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const entry = JSON.parse(raw);
-      if (entry.date === new Date().toDateString()) {
+      if (entry.date === getNow().toDateString()) {
         document.querySelector('#preview-card-4 .a').innerText = entry.answer;
         document.getElementById('preview-card-4').style.background = entry.background;
         document.querySelector('#modal-preview .a').innerText = entry.answer;
@@ -349,6 +374,18 @@
   }
 
   function resetEntry() {
+    localStorage.removeItem(STORAGE_KEY);
+    goHome();
+  }
+
+  function simulateNextDay() {
+    const offset = parseInt(localStorage.getItem('debugDayOffset') || '0', 10) + 1;
+    localStorage.setItem('debugDayOffset', String(offset));
+    goHome();
+  }
+
+  function resetDemo() {
+    localStorage.removeItem('debugDayOffset');
     localStorage.removeItem(STORAGE_KEY);
     goHome();
   }
