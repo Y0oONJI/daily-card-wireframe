@@ -25,6 +25,27 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
+  }
+  .toast {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: #222;
+    color: #fff;
+    font-size: 12px;
+    padding: 9px 16px;
+    border-radius: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 50;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
   .flow {
     flex-shrink: 0;
@@ -189,6 +210,7 @@
 
 <div class="device">
   <div class="flow">1.질문 → 2.답변 → 3.배경선택 → 4.카드결과 → 5.타인답변</div>
+  <div class="toast" id="toast"></div>
 
   <!-- 1 -->
   <div class="screen active" id="screen-1">
@@ -331,6 +353,23 @@
     return QUESTIONS[diffDays % QUESTIONS.length];
   }
 
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function checkNewDayToast() {
+    const todayStr = getNow().toDateString();
+    const lastSeen = localStorage.getItem('lastSeenDate');
+    if (lastSeen && lastSeen !== todayStr) {
+      showToast('새로운 질문이 도착했어요');
+    }
+    localStorage.setItem('lastSeenDate', todayStr);
+  }
+
   function applyTodayQuestion() {
     const q = todayQuestion();
     const questionEl = document.getElementById('today-question');
@@ -356,6 +395,7 @@
 
   function goHome() {
     applyTodayQuestion();
+    checkNewDayToast();
     go(1);
     const modal = document.getElementById('completed-modal');
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -387,6 +427,7 @@
   function resetDemo() {
     localStorage.removeItem('debugDayOffset');
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('lastSeenDate');
     goHome();
   }
 
