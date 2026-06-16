@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>데일리 카드 - 와이어프레임</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    font-family: -apple-system, "Apple SD Gothic Neo", sans-serif;
+    background: #cfcfcf;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .device {
+    width: 100%;
+    max-width: 430px;
+    height: 100%;
+    background: #fff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .flow {
+    flex-shrink: 0;
+  }
+  .screen {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+  .screen.active { display: flex; }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #999;
+  }
+  .topbar .back { cursor: pointer; font-size: 18px; color: #555; }
+  .box {
+    border: 1.5px dashed #999;
+    border-radius: 8px;
+    padding: 16px;
+    color: #555;
+    font-size: 14px;
+    text-align: center;
+  }
+  .question {
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.5;
+    color: #222;
+    padding: 30px 8px;
+  }
+  .placeholder {
+    color: #aaa;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 14px;
+    min-height: 70px;
+  }
+  .counter {
+    align-self: flex-end;
+    font-size: 12px;
+    color: #aaa;
+  }
+  .btn {
+    border: 1.5px solid #222;
+    border-radius: 24px;
+    text-align: center;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #222;
+    cursor: pointer;
+    user-select: none;
+  }
+  .btn:active { background: #f0f0f0; }
+  .btn.outline {
+    border-style: dashed;
+    color: #555;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .tab {
+    flex: 1;
+    border: 1px solid #999;
+    border-radius: 6px;
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    color: #777;
+    cursor: pointer;
+  }
+  .tab.selected { border-color: #222; color: #222; font-weight: 600; }
+  .swatches {
+    display: flex;
+    gap: 10px;
+    overflow: hidden;
+  }
+  .swatch {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #999;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .swatch.selected { border: 3px solid #222; }
+  .preview-card {
+    background: repeating-linear-gradient(45deg, #f0f0f0, #f0f0f0 6px, #e3e3e3 6px, #e3e3e3 12px);
+    border: 1px solid #999;
+    border-radius: 10px;
+    padding: 26px;
+    text-align: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 14px;
+  }
+  .preview-card .date { font-size: 12px; color: #888; }
+  .preview-card .q { font-size: 16px; font-weight: 600; color: #333; }
+  .preview-card .a { font-size: 14px; color: #555; }
+  .note {
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+    border-top: 1px dashed #ccc;
+    padding-top: 10px;
+  }
+  .spacer { flex: 1; }
+  .flow {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 16px;
+  }
+  .screen {
+    position: relative;
+  }
+  .modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    padding: 0 4px;
+    z-index: 5;
+  }
+  .modal-overlay.hidden { display: none; }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  #today-question.fade-in {
+    animation: fadeInUp 0.5s ease;
+  }
+</style>
+</head>
+<body>
+
+<div class="device">
+  <div class="flow">1.질문 → 2.답변 → 3.배경선택 → 4.카드결과 → 5.타인답변</div>
+
+  <!-- 1 -->
+  <div class="screen active" id="screen-1">
+    <div class="topbar"><span>2026.06.17</span><span></span></div>
+    <div class="question" id="today-question">"요즘 가장<br>설레는 건 뭔가요?"</div>
+    <div class="spacer"></div>
+    <div class="btn" onclick="go(2)">답변하기</div>
+
+    <div class="modal-overlay hidden" id="completed-modal">
+      <div class="box" style="font-weight:600; color:#333;">오늘 답변 완료!<br>내일 새 질문을 기다려주세요</div>
+      <div class="preview-card" id="modal-preview" style="background:#ddd;">
+        <div class="date">2026.06.17</div>
+        <div class="a">오랜만에 만난 친구</div>
+      </div>
+      <div class="btn" onclick="go(4)">카드 다시보기</div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="screen" id="screen-2">
+    <div class="topbar"><span class="back" onclick="go(1)">←</span><span></span></div>
+    <div class="box" id="answer-question-box">"요즘 가장 설레는 건 뭔가요?"</div>
+    <div class="placeholder" id="answer-input" contenteditable="true" placeholder="답변을 입력하세요...">답변을 입력하세요...</div>
+    <div class="counter">12 / 40자</div>
+    <div class="spacer"></div>
+    <div class="btn" onclick="go(3)">제출하기</div>
+  </div>
+
+  <!-- 3 -->
+  <div class="screen" id="screen-3">
+    <div class="topbar"><span class="back" onclick="go(2)">←</span><span>배경을 골라보세요</span></div>
+    <div class="tabs">
+      <div class="tab selected" onclick="selectTab(this,'color')">컬러</div>
+      <div class="tab" onclick="selectTab(this,'gradient')">그라디언트</div>
+      <div class="tab" onclick="selectTab(this,'image')">이미지</div>
+    </div>
+    <div class="swatches" data-group="color">
+      <div class="swatch selected" style="background:#ddd;" onclick="selectSwatch(this,'#ddd')"></div>
+      <div class="swatch" style="background:#eee;" onclick="selectSwatch(this,'#eee')"></div>
+      <div class="swatch" style="background:#ccc;" onclick="selectSwatch(this,'#ccc')"></div>
+      <div class="swatch" style="background:#e5e5e5;" onclick="selectSwatch(this,'#e5e5e5')"></div>
+      <div class="swatch" style="background:#d8d8d8;" onclick="selectSwatch(this,'#d8d8d8')"></div>
+    </div>
+    <div class="swatches" data-group="gradient" style="display:none;">
+      <div class="swatch" style="background:linear-gradient(135deg,#eee,#bbb);" onclick="selectSwatch(this,'linear-gradient(135deg,#eee,#bbb)')"></div>
+      <div class="swatch" style="background:linear-gradient(135deg,#fafafa,#ccc);" onclick="selectSwatch(this,'linear-gradient(135deg,#fafafa,#ccc)')"></div>
+      <div class="swatch" style="background:linear-gradient(135deg,#ddd,#999);" onclick="selectSwatch(this,'linear-gradient(135deg,#ddd,#999)')"></div>
+      <div class="swatch" style="background:linear-gradient(135deg,#f5f5f5,#aaa);" onclick="selectSwatch(this,'linear-gradient(135deg,#f5f5f5,#aaa)')"></div>
+    </div>
+    <div class="swatches" data-group="image" style="display:none;">
+      <div class="swatch" style="background:repeating-linear-gradient(45deg,#f0f0f0,#f0f0f0 4px,#ccc 4px,#ccc 8px);" onclick="selectSwatch(this,'repeating-linear-gradient(45deg,#f0f0f0,#f0f0f0 4px,#ccc 4px,#ccc 8px)')"></div>
+      <div class="swatch" style="background:repeating-radial-gradient(circle,#eee,#eee 4px,#ccc 4px,#ccc 8px);" onclick="selectSwatch(this,'repeating-radial-gradient(circle,#eee,#eee 4px,#ccc 4px,#ccc 8px)')"></div>
+      <div class="swatch" style="background:repeating-linear-gradient(-45deg,#fafafa,#fafafa 4px,#ddd 4px,#ddd 8px);" onclick="selectSwatch(this,'repeating-linear-gradient(-45deg,#fafafa,#fafafa 4px,#ddd 4px,#ddd 8px)')"></div>
+    </div>
+    <div class="preview-card" id="preview-card-3" style="background:#ddd;">
+      <div class="date">2026.06.17</div>
+      <div class="q today-q-text">요즘 가장 설레는 건?</div>
+      <div class="a">오랜만에 만난 친구</div>
+    </div>
+    <div class="btn" onclick="finishCard()">카드 만들기</div>
+  </div>
+
+  <!-- 4 -->
+  <div class="screen" id="screen-4">
+    <div class="topbar"><span class="back" onclick="go(3)">←</span><span></span></div>
+    <div class="preview-card" id="preview-card-4" style="background:#ddd;">
+      <div class="date">2026.06.17</div>
+      <div class="q today-q-text-quoted">"요즘 가장 설레는 건<br>뭔가요?"</div>
+      <div class="a">오랜만에 만난 친구</div>
+    </div>
+    <div class="btn" onclick="alert('이미지 다운로드 (목업)')">이미지로 다운로드</div>
+    <div class="btn outline" onclick="go(5)">다른 사람 답변 보기</div>
+    <div class="note" style="cursor:pointer; border-top:none;" onclick="resetEntry()">오늘 기록 초기화 (데모용)</div>
+  </div>
+
+  <!-- 5 -->
+  <div class="screen" id="screen-5">
+    <div class="topbar"><span class="back" onclick="go(4)">←</span><span></span></div>
+    <div class="box" style="font-weight:600; color:#333;">같은 질문에 다른 누군가는<br>이렇게 답했어요</div>
+    <div class="preview-card">
+      <div class="a" style="font-size:16px;">"오랜만에 만난 친구"</div>
+    </div>
+    <div class="note">※ 내 답변도 다른 사람에게<br>무작위로 보일 수 있어요</div>
+    <div class="spacer"></div>
+    <div class="btn outline" onclick="goHome()">처음으로</div>
+  </div>
+
+</div>
+
+<script>
+  function go(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + n).classList.add('active');
+  }
+
+  function selectTab(el, group) {
+    document.querySelectorAll('#screen-3 .tab').forEach(t => t.classList.remove('selected'));
+    el.classList.add('selected');
+    document.querySelectorAll('#screen-3 .swatches').forEach(s => {
+      s.style.display = s.dataset.group === group ? 'flex' : 'none';
+    });
+    const firstSwatch = document.querySelector('#screen-3 .swatches[data-group="' + group + '"] .swatch');
+    if (firstSwatch) firstSwatch.click();
+  }
+
+  function selectSwatch(el, bg) {
+    el.parentElement.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    currentBackground = bg;
+    document.getElementById('preview-card-3').style.background = bg;
+    document.getElementById('preview-card-4').style.background = bg;
+  }
+
+  let currentBackground = '#ddd';
+  const STORAGE_KEY = 'dailyCardEntry';
+
+  const QUESTIONS = [
+    '요즘 가장 설레는 건 뭔가요?',
+    '오늘 나를 웃게 한 순간은?',
+    '최근에 누군가에게 고마웠던 일은?',
+    '요즘 가장 듣고 싶은 말은?',
+    '오늘의 나에게 한마디 한다면?'
+  ];
+
+  function todayQuestion() {
+    const start = new Date(2024, 0, 1);
+    const diffDays = Math.floor((new Date() - start) / 86400000);
+    return QUESTIONS[diffDays % QUESTIONS.length];
+  }
+
+  function applyTodayQuestion() {
+    const q = todayQuestion();
+    const questionEl = document.getElementById('today-question');
+    questionEl.innerHTML = '"' + q + '"';
+    questionEl.classList.remove('fade-in');
+    void questionEl.offsetWidth;
+    questionEl.classList.add('fade-in');
+    document.getElementById('answer-question-box').innerHTML = '"' + q + '"';
+    document.querySelectorAll('.today-q-text').forEach(el => el.textContent = q + '?');
+    document.querySelectorAll('.today-q-text-quoted').forEach(el => el.innerHTML = '"' + q + '"');
+  }
+
+  function finishCard() {
+    const answer = document.getElementById('answer-input').innerText.trim();
+    document.querySelector('#preview-card-4 .a').innerText = answer;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      date: new Date().toDateString(),
+      answer: answer,
+      background: currentBackground
+    }));
+    go(4);
+  }
+
+  function goHome() {
+    applyTodayQuestion();
+    go(1);
+    const modal = document.getElementById('completed-modal');
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const entry = JSON.parse(raw);
+      if (entry.date === new Date().toDateString()) {
+        document.querySelector('#preview-card-4 .a').innerText = entry.answer;
+        document.getElementById('preview-card-4').style.background = entry.background;
+        document.querySelector('#modal-preview .a').innerText = entry.answer;
+        document.getElementById('modal-preview').style.background = entry.background;
+        modal.classList.remove('hidden');
+        return;
+      }
+    }
+    modal.classList.add('hidden');
+  }
+
+  function resetEntry() {
+    localStorage.removeItem(STORAGE_KEY);
+    goHome();
+  }
+
+  goHome();
+</script>
+</body>
+</html>
