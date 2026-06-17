@@ -482,8 +482,9 @@
   const answerInput = document.getElementById('answer-input');
   const answerCounter = document.getElementById('answer-counter');
   answerInput.addEventListener('input', function () {
-    const len = this.innerText.replace(/\n$/, '').length;
-    answerCounter.textContent = len + ' / 40자';
+    const text = this.innerText.replace(/\n$/, '');
+    answerCounter.textContent = text.length + ' / 40자';
+    document.querySelector('#preview-card-3 .a').innerText = text;
   });
 
   goHome();
