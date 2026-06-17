@@ -83,12 +83,19 @@
   }
 
   .placeholder {
-    color: #aaa;
+    color: #222;
     border: 1px solid #ccc;
     border-radius: 8px;
     padding: 14px;
     font-size: 14px;
     min-height: 70px;
+    outline: none;
+    position: relative;
+  }
+  .placeholder:empty::before {
+    content: attr(placeholder);
+    color: #aaa;
+    pointer-events: none;
   }
 
   .counter {
@@ -260,8 +267,8 @@
   <div class="screen" id="screen-2">
     <div class="topbar"><span class="back" onclick="go(1)">←</span><span></span></div>
     <div class="box" id="answer-question-box">"요즘 가장 설레는 건 뭔가요?"</div>
-    <div class="placeholder" id="answer-input" contenteditable="true" placeholder="답변을 입력하세요...">답변을 입력하세요...</div>
-    <div class="counter">12 / 40자</div>
+    <div class="placeholder" id="answer-input" contenteditable="true" placeholder="답변을 입력하세요..."></div>
+    <div class="counter" id="answer-counter">0 / 40자</div>
     <div class="spacer"></div>
     <div class="btn" onclick="go(3)">제출하기</div>
   </div>
@@ -470,6 +477,14 @@
     localStorage.removeItem('lastSeenDate');
     goHome();
   }
+
+  /* ===== Answer input placeholder & counter ===== */
+  const answerInput = document.getElementById('answer-input');
+  const answerCounter = document.getElementById('answer-counter');
+  answerInput.addEventListener('input', function () {
+    const len = this.innerText.replace(/\n$/, '').length;
+    answerCounter.textContent = len + ' / 40자';
+  });
 
   goHome();
 </script>
