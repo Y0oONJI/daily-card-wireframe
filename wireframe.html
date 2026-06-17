@@ -256,7 +256,8 @@
     <div class="modal-overlay hidden" id="completed-modal">
       <div class="box" style="font-weight:600; color:#333;">오늘 답변 완료!<br>내일 새 질문을 기다려주세요</div>
       <div class="preview-card" id="modal-preview" style="background:#ddd;">
-        <div class="date">2026.06.17</div>
+        <div class="date card-date">2026.06.17</div>
+        <div class="q today-q-text-quoted">"요즘 가장 설레는 건<br>뭔가요?"</div>
         <div class="a">오랜만에 만난 친구</div>
       </div>
       <div class="btn" onclick="go(4)">카드 다시보기</div>
@@ -300,7 +301,7 @@
       <div class="swatch" style="background:repeating-linear-gradient(-45deg,#fafafa,#fafafa 4px,#ddd 4px,#ddd 8px);" onclick="selectSwatch(this,'repeating-linear-gradient(-45deg,#fafafa,#fafafa 4px,#ddd 4px,#ddd 8px)')"></div>
     </div>
     <div class="preview-card" id="preview-card-3" style="background:#ddd;">
-      <div class="date">2026.06.17</div>
+      <div class="date card-date">2026.06.17</div>
       <div class="q today-q-text">요즘 가장 설레는 건?</div>
       <div class="a">오랜만에 만난 친구</div>
     </div>
@@ -311,7 +312,7 @@
   <div class="screen" id="screen-4">
     <div class="topbar"><span class="back" onclick="go(3)">←</span><span></span></div>
     <div class="preview-card" id="preview-card-4" style="background:#ddd;">
-      <div class="date">2026.06.17</div>
+      <div class="date card-date">2026.06.17</div>
       <div class="q today-q-text-quoted">"요즘 가장 설레는 건<br>뭔가요?"</div>
       <div class="a">오랜만에 만난 친구</div>
     </div>
@@ -388,6 +389,13 @@
     return d;
   }
 
+  function formatDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '.' + m + '.' + day;
+  }
+
   /* ===== Daily question rotation ===== */
   function todayQuestion() {
     const start = new Date(2024, 0, 1);
@@ -400,11 +408,13 @@
     const questionEl = document.getElementById('today-question');
     questionEl.innerHTML = '"' + q + '"';
     questionEl.classList.remove('fade-in');
-    void questionEl.offsetWidth; // reflow to restart the CSS animation
+    void questionEl.offsetWidth;
     questionEl.classList.add('fade-in');
     document.getElementById('answer-question-box').innerHTML = '"' + q + '"';
     document.querySelectorAll('.today-q-text').forEach(el => el.textContent = q + '?');
     document.querySelectorAll('.today-q-text-quoted').forEach(el => el.innerHTML = '"' + q + '"');
+    const dateStr = formatDate(getNow());
+    document.querySelectorAll('.card-date').forEach(el => el.textContent = dateStr);
   }
 
   /* ===== "New question" toast ===== */
