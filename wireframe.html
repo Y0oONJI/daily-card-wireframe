@@ -223,6 +223,92 @@
     animation: fadeInUp 0.5s ease;
   }
 
+  /* ---------- Onboarding overlay (first visit only) ---------- */
+  .onboarding-overlay {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+  .onboarding-overlay.hidden { display: none; }
+
+  .onboard-step {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    padding: 20px;
+    gap: 14px;
+  }
+  .onboard-step.active { display: flex; }
+
+  .onboard-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .onboard-illust {
+    width: 100%;
+    max-width: 220px;
+    aspect-ratio: 3/4;
+    border: 1.5px dashed #bbb;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    color: #bbb;
+    font-size: 13px;
+  }
+  .onboard-illust .illust-q {
+    font-size: 14px;
+    font-weight: 600;
+    color: #aaa;
+    text-align: center;
+    padding: 0 16px;
+  }
+  .onboard-illust .illust-a {
+    font-size: 12px;
+    color: #bbb;
+  }
+
+  .onboard-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #222;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .onboard-desc {
+    font-size: 14px;
+    color: #888;
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .onboard-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ddd;
+    transition: background 0.2s;
+  }
+  .dot.active { background: #222; }
+
   /* ---------- Demo-only controls (not part of the real product) ---------- */
   .debug-bar {
     flex-shrink: 0;
@@ -244,6 +330,51 @@
 <div class="device">
   <div class="flow">1.질문 → 2.답변 → 3.배경선택 → 4.카드결과 → 5.타인답변</div>
   <div class="toast" id="toast"></div>
+
+  <!-- 온보딩 오버레이 (첫 방문 시에만 표시) -->
+  <div class="onboarding-overlay" id="onboarding">
+
+    <!-- 온보딩 1단계: 앱 소개 -->
+    <div class="onboard-step active" id="onboard-1">
+      <div class="onboard-content">
+        <div class="onboard-illust">
+          <div class="illust-q">"오늘 나를 웃게 한<br>순간은?"</div>
+          <div class="illust-a">오랜만에 만난 친구 ☺</div>
+        </div>
+        <div>
+          <div class="onboard-title">매일 하나의 질문,<br>나만의 카드로 기록해요</div>
+        </div>
+      </div>
+      <div class="onboard-dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+      </div>
+      <div class="btn" onclick="onboardNext()">다음</div>
+    </div>
+
+    <!-- 온보딩 2단계: 사용법 -->
+    <div class="onboard-step" id="onboard-2">
+      <div class="onboard-content">
+        <div class="onboard-illust" style="flex-direction:row; flex-wrap:wrap; gap:6px; padding:16px; aspect-ratio:auto; min-height:140px;">
+          <div style="flex:1; border:1px dashed #ccc; border-radius:8px; padding:10px; font-size:11px; color:#aaa; text-align:center;">질문 읽기</div>
+          <div style="font-size:16px; color:#ccc; align-self:center;">→</div>
+          <div style="flex:1; border:1px dashed #ccc; border-radius:8px; padding:10px; font-size:11px; color:#aaa; text-align:center;">답변 쓰기</div>
+          <div style="font-size:16px; color:#ccc; align-self:center;">→</div>
+          <div style="flex:1; border:1px dashed #ccc; border-radius:8px; padding:10px; font-size:11px; color:#aaa; text-align:center;">카드 완성</div>
+        </div>
+        <div>
+          <div class="onboard-title">질문에 답하고<br>배경을 골라 카드를 만들어요</div>
+          <div class="onboard-desc" style="margin-top:12px;">하루에 한 번,<br>나를 돌아보는 시간</div>
+        </div>
+      </div>
+      <div class="onboard-dots">
+        <span class="dot"></span>
+        <span class="dot active"></span>
+      </div>
+      <div class="btn" onclick="onboardDone()">시작하기</div>
+    </div>
+
+  </div>
 
   <!-- Screen 1: 오늘의 질문 (홈) -->
   <div class="screen active" id="screen-1">
@@ -485,7 +616,28 @@
     localStorage.removeItem('debugDayOffset');
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('lastSeenDate');
+    localStorage.removeItem('onboardingDone');
+    document.getElementById('onboard-1').classList.add('active');
+    document.getElementById('onboard-2').classList.remove('active');
+    document.getElementById('onboarding').classList.remove('hidden');
     goHome();
+  }
+
+  /* ===== Onboarding ===== */
+  function initOnboarding() {
+    if (localStorage.getItem('onboardingDone')) {
+      document.getElementById('onboarding').classList.add('hidden');
+    }
+  }
+
+  function onboardNext() {
+    document.getElementById('onboard-1').classList.remove('active');
+    document.getElementById('onboard-2').classList.add('active');
+  }
+
+  function onboardDone() {
+    localStorage.setItem('onboardingDone', '1');
+    document.getElementById('onboarding').classList.add('hidden');
   }
 
   /* ===== Answer input placeholder & counter ===== */
@@ -498,6 +650,7 @@
   });
 
   goHome();
+  initOnboarding();
 </script>
 </body>
 </html>
