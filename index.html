@@ -2,35 +2,50 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>데일리 카드 - 와이어프레임</title>
 <style>
   /* ---------- Reset & layout ---------- */
   * { box-sizing: border-box; }
 
-  html, body {
+  html {
     height: 100%;
-    overflow: hidden;
   }
 
   body {
     font-family: -apple-system, "Apple SD Gothic Neo", sans-serif;
     background: #cfcfcf;
     margin: 0;
+    height: 100vh;
+    height: 100dvh; /* dvh keeps the frame stable when mobile browser chrome shows/hides */
+    overflow: hidden;
+    overscroll-behavior: none;
     display: flex;
+    align-items: center;
     justify-content: center;
   }
 
-  /* Mobile frame: fills max-width 430px, gray margins on wider viewports */
+  /* Phone frame: fills the viewport on a phone, capped phone-sized card on desktop */
   .device {
     width: 100%;
     max-width: 430px;
     height: 100%;
+    max-height: 932px; /* stops the frame stretching into a tall strip on big monitors */
     background: #fff;
     padding: 20px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     overflow: hidden;
     position: relative;
+  }
+
+  /* Once there are gray margins anyway, present it as a phone-shaped card */
+  @media (min-width: 480px) {
+    .device {
+      border-radius: 28px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+    }
   }
 
   /* ---------- Screens ---------- */
@@ -47,10 +62,13 @@
     gap: 14px;
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none; /* content is sized to fit; scroll is only a safety net */
     position: relative; /* anchors .modal-overlay inside screen-1 */
   }
   .screen.active { display: flex; }
+  .screen::-webkit-scrollbar { display: none; }
 
   .topbar {
     display: flex;
@@ -83,12 +101,19 @@
   }
 
   .placeholder {
-    color: #aaa;
+    color: #222;
     border: 1px solid #ccc;
     border-radius: 8px;
     padding: 14px;
     font-size: 14px;
     min-height: 70px;
+    outline: none;
+    position: relative;
+  }
+  .placeholder:empty::before {
+    content: attr(placeholder);
+    color: #aaa;
+    pointer-events: none;
   }
 
   .counter {
@@ -249,7 +274,8 @@
     <div class="modal-overlay hidden" id="completed-modal">
       <div class="box" style="font-weight:600; color:#333;">오늘 답변 완료!<br>내일 새 질문을 기다려주세요</div>
       <div class="preview-card" id="modal-preview" style="background:#ddd;">
-        <div class="date">2026.06.17</div>
+        <div class="date card-date">2026.06.17</div>
+        <div class="q today-q-text-quoted">"요즘 가장 설레는 건<br>뭔가요?"</div>
         <div class="a">오랜만에 만난 친구</div>
       </div>
       <div class="btn" onclick="go(4)">카드 다시보기</div>
@@ -260,8 +286,8 @@
   <div class="screen" id="screen-2">
     <div class="topbar"><span class="back" onclick="go(1)">←</span><span></span></div>
     <div class="box" id="answer-question-box">"요즘 가장 설레는 건 뭔가요?"</div>
-    <div class="placeholder" id="answer-input" contenteditable="true" placeholder="답변을 입력하세요...">답변을 입력하세요...</div>
-    <div class="counter">12 / 40자</div>
+    <div class="placeholder" id="answer-input" contenteditable="true" placeholder="답변을 입력하세요..."></div>
+    <div class="counter" id="answer-counter">0 / 40자</div>
     <div class="spacer"></div>
     <div class="btn" onclick="go(3)">제출하기</div>
   </div>
@@ -293,8 +319,8 @@
       <div class="swatch" style="background:repeating-linear-gradient(-45deg,#fafafa,#fafafa 4px,#ddd 4px,#ddd 8px);" onclick="selectSwatch(this,'repeating-linear-gradient(-45deg,#fafafa,#fafafa 4px,#ddd 4px,#ddd 8px)')"></div>
     </div>
     <div class="preview-card" id="preview-card-3" style="background:#ddd;">
-      <div class="date">2026.06.17</div>
-      <div class="q today-q-text">요즘 가장 설레는 건?</div>
+      <div class="date card-date">2026.06.17</div>
+      <div class="q today-q-text">요즘 가장 설레는 건 뭔가요?</div>
       <div class="a">오랜만에 만난 친구</div>
     </div>
     <div class="btn" onclick="finishCard()">카드 만들기</div>
@@ -304,7 +330,7 @@
   <div class="screen" id="screen-4">
     <div class="topbar"><span class="back" onclick="go(3)">←</span><span></span></div>
     <div class="preview-card" id="preview-card-4" style="background:#ddd;">
-      <div class="date">2026.06.17</div>
+      <div class="date card-date">2026.06.17</div>
       <div class="q today-q-text-quoted">"요즘 가장 설레는 건<br>뭔가요?"</div>
       <div class="a">오랜만에 만난 친구</div>
     </div>
@@ -381,6 +407,13 @@
     return d;
   }
 
+  function formatDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '.' + m + '.' + day;
+  }
+
   /* ===== Daily question rotation ===== */
   function todayQuestion() {
     const start = new Date(2024, 0, 1);
@@ -393,11 +426,13 @@
     const questionEl = document.getElementById('today-question');
     questionEl.innerHTML = '"' + q + '"';
     questionEl.classList.remove('fade-in');
-    void questionEl.offsetWidth; // reflow to restart the CSS animation
+    void questionEl.offsetWidth;
     questionEl.classList.add('fade-in');
     document.getElementById('answer-question-box').innerHTML = '"' + q + '"';
-    document.querySelectorAll('.today-q-text').forEach(el => el.textContent = q + '?');
+    document.querySelectorAll('.today-q-text').forEach(el => el.textContent = q);
     document.querySelectorAll('.today-q-text-quoted').forEach(el => el.innerHTML = '"' + q + '"');
+    const dateStr = formatDate(getNow());
+    document.querySelectorAll('.card-date').forEach(el => el.textContent = dateStr);
   }
 
   /* ===== "New question" toast ===== */
@@ -470,6 +505,15 @@
     localStorage.removeItem('lastSeenDate');
     goHome();
   }
+
+  /* ===== Answer input placeholder & counter ===== */
+  const answerInput = document.getElementById('answer-input');
+  const answerCounter = document.getElementById('answer-counter');
+  answerInput.addEventListener('input', function () {
+    const text = this.innerText.replace(/\n$/, '');
+    answerCounter.textContent = text.length + ' / 40자';
+    document.querySelector('#preview-card-3 .a').innerText = text;
+  });
 
   goHome();
 </script>
